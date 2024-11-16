@@ -1,101 +1,79 @@
-import Image from "next/image";
+"use client";
+import { BrowserProvider } from "ethers";
+import { useState } from "react";
+import { Address } from "viem";
+import Details from "./components/userDetails";
+import CreateStream from "./components/createStream";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [account, setAccount] = useState("" as Address);
+  const [message, setMessage] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== "undefined") {
+      try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const provider = new BrowserProvider(window.ethereum);
+        setProvider(provider);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        setAccount("0x2CeADe86A04e474F3cf9BD87208514d818010627" as Address);
+        // setAccount(address as Address);
+        setMessage(`Connected to ${address}`);
+      } catch (error) {
+        console.error("Failed to connect wallet:", error);
+        setMessage("Failed to connect wallet. Please try again.");
+      }
+    } else {
+      setMessage("Please install Metamask to use this feature.");
+    }
+  };
+
+  return (
+    <div className="p-20 mx-auto">
+      <h1 className="p-4 my-10 text-xl font-bold text-center rounded-md">
+        Welcome to Trust Squared v0
+      </h1>
+
+      {!account ? (
+        <div className="flex justify-center">
+          <button
+            onClick={connectWallet}
+            className="p-4 bg-blue-600 text-white rounded-md border-none cursor-pointer"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Connect Wallet
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      ) : (
+        <div>
+          <div>
+            {message && (
+              <div
+                className="p-4 my-4 border border-green-300 bg-green-100 text-green-700 px-4 py-3 rounded-md relative"
+                role="alert"
+              >
+                <strong className="font-bold">Status: </strong>
+                <span className="block sm:inline">{message}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap justify-around items-center">
+            <CreateStream
+              account={account}
+              setMessage={setMessage}
+              provider={provider}
+            />
+            <Details memberId={account} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
